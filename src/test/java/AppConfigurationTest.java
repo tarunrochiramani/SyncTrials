@@ -23,6 +23,6 @@ public class AppConfigurationTest {
         assertNotNull(ldapConfig.getPort());
         assertNotNull(ldapConfig.getBindDn());
         assertNotNull(ldapConfig.getPassword());
-        logger.info(ldapConfig);
+        logger.warn(ldapConfig);
     }
 }

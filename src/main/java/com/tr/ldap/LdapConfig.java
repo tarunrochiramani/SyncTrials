@@ -34,6 +34,6 @@ public class LdapConfig {
     }
 
     public String toString() {
-        return "host: " + host +" port: " + port + " bindDn: " + bindDn + " password: " + password;
+        return "\nhost: " + host + "\nport: " + port + "\nbindDn: " + bindDn + "\npassword: " + password;
     }
 }

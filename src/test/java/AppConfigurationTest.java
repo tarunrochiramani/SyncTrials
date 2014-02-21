@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -23,6 +24,8 @@ public class AppConfigurationTest {
         assertNotNull(ldapConfig.getPort());
         assertNotNull(ldapConfig.getBindDn());
         assertNotNull(ldapConfig.getPassword());
+        assertNotNull(ldapConfig.getGroupDNs());
+        assertFalse(ldapConfig.getGroupDNs().isEmpty());
         logger.warn(ldapConfig);
     }
 }

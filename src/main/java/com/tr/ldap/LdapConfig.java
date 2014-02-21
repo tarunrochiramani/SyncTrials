@@ -3,6 +3,8 @@ package com.tr.ldap;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class LdapConfig {
     @Value("${ad.host}")
@@ -16,6 +18,9 @@ public class LdapConfig {
 
     @Value("${ad.password}")
     private String password;
+
+    @Value("#{'${group.dn}'.trim().split(';')}")
+    private List<String> groupDNs;
 
     public String getHost() {
         return host;
@@ -33,7 +38,17 @@ public class LdapConfig {
         return password;
     }
 
+    public List<String> getGroupDNs() {
+        return groupDNs;
+    }
+
     public String toString() {
-        return "\nhost: " + host + "\nport: " + port + "\nbindDn: " + bindDn + "\npassword: " + password;
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("\nhost: " + host + "\nport: " + port + "\nbindDn: " + bindDn + "\npassword: " + password);
+        stringBuilder.append("\ngroupDns - ");
+        for (String groupDn : getGroupDNs()) {
+            stringBuilder.append("\n" + groupDn);
+        }
+        return stringBuilder.toString();
     }
 }

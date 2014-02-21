@@ -1,4 +1,4 @@
-package com.tr.config;
+package com.tr;
 
 import com.mongodb.Mongo;
 import org.springframework.context.annotation.Bean;
@@ -9,10 +9,12 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
-@ComponentScan (basePackages = "com.tr")
+@ComponentScan (basePackages = "com.tr.*")
 @Configuration
 @PropertySource("classpath:/config.properties")
+@EnableMongoRepositories
 public class AppConfiguration {
 
     public @Bean

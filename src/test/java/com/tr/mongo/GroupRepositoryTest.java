@@ -3,6 +3,7 @@ package com.tr.mongo;
 import com.tr.AppConfiguration;
 import com.tr.mongo.entity.Group;
 import com.tr.mongo.repository.GroupRepository;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,6 +13,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.List;
 
+import static com.tr.testutils.builders.GroupBuilder.aGroup;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -20,16 +22,17 @@ import static org.junit.Assert.assertNotNull;
 @ContextConfiguration(classes = AppConfiguration.class)
 public class GroupRepositoryTest {
 
-    @Autowired private GroupRepository repository;
-    private static final String GROUP_NAME = "sampleGroup";
-    private Group group;
+    @Autowired private GroupRepository repository;    ;
+    private Group group = aGroup().build();
 
     @Before
+    public void setUp() {
+        repository.save(group);
+    }
+
+    @After
     public void cleanUp() {
         repository.deleteAll();
-        group = new Group();
-        group.setName(GROUP_NAME);
-        repository.save(group);
     }
 
     @Test
@@ -38,14 +41,22 @@ public class GroupRepositoryTest {
         assertNotNull(groupList);
         assertFalse(groupList.isEmpty());
         assertEquals(1, groupList.size());
-        assertEquals(groupList.get(0).getName(), group.getName());
+        assertEquals(groupList.get(0), group);
     }
 
     @Test
-    public void canFindByName() {
-        Group groupRetrieved = repository.findByName(GROUP_NAME);
+    public void canFindByDn() {
+        Group groupRetrieved = repository.findByDn(group.getDn());
 
         assertNotNull(groupRetrieved);
-        assertEquals(group.getName(), groupRetrieved.getName());
+        assertEquals(group, groupRetrieved);
+    }
+
+    @Test
+    public void canFindByObjectGuid() {
+        Group groupRetrieved = repository.findByObjectGuid(group.getObjectGuid());
+
+        assertNotNull(groupRetrieved);
+        assertEquals(group, groupRetrieved);
     }
 }

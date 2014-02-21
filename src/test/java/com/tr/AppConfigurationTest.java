@@ -1,6 +1,8 @@
 package com.tr;
 
 import com.tr.ldap.LdapConfig;
+import com.tr.mongo.entity.Group;
+import com.tr.mongo.repository.GroupRepository;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,16 +10,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.List;
+
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = AppConfiguration.class)
 public class AppConfigurationTest {
     private static Logger logger = Logger.getLogger(AppConfigurationTest.class);
 
-    @Autowired
-    private LdapConfig ldapConfig;
+    @Autowired private LdapConfig ldapConfig;
+    @Autowired private GroupRepository groupRepository;
 
     @Test
     public void canSetUpLdapConfig() {
@@ -29,5 +34,13 @@ public class AppConfigurationTest {
         assertNotNull(ldapConfig.getGroupDNs());
         assertFalse(ldapConfig.getGroupDNs().isEmpty());
         logger.warn(ldapConfig);
+    }
+
+    @Test
+    public void canCleanOutAllGroups() {
+        groupRepository.deleteAll();
+        List<Group> groupList = groupRepository.findAll();
+        assertNotNull(groupList);
+        assertTrue(groupList.isEmpty());
     }
 }

@@ -1,3 +1,5 @@
+package com.tr;
+
 import com.tr.ldap.LdapConfig;
 import org.apache.log4j.Logger;
 import org.junit.Test;

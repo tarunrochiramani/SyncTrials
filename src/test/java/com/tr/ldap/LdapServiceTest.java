@@ -1,5 +1,6 @@
-import com.tr.ldap.LdapConfig;
-import com.tr.ldap.LdapService;
+package com.tr.ldap;
+
+import com.tr.AppConfiguration;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPConnection;

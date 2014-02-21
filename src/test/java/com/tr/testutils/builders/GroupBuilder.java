@@ -1,7 +1,8 @@
 package com.tr.testutils.builders;
 
 import com.tr.mongo.entity.Group;
-import javafx.util.Builder;
+import org.apache.commons.lang3.builder.Builder;
+
 
 import java.util.HashMap;
 import java.util.List;

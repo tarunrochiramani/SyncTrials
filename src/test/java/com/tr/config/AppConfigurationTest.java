@@ -1,4 +1,4 @@
-package com.tr;
+package com.tr.config;
 
 import com.tr.ldap.LdapConfig;
 import org.apache.log4j.Logger;

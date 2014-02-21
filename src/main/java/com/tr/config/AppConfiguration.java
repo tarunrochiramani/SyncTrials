@@ -1,4 +1,4 @@
-package com.tr;
+package com.tr.config;
 
 import com.mongodb.Mongo;
 import org.springframework.context.annotation.Bean;

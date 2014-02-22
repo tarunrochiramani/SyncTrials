@@ -6,10 +6,12 @@ import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.sdk.Control;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.EntrySourceException;
+import com.unboundid.ldap.sdk.Filter;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPEntrySource;
 import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.SearchRequest;
+import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.controls.SimplePagedResultsControl;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -21,6 +23,7 @@ import java.util.List;
 public class LdapService {
     private static Logger logger = Logger.getLogger(LdapService.class);
 
+    @Nonnull
     public LDAPConnection createConnection(@Nonnull final LdapConfig ldapConfig) {
         Preconditions.checkNotNull(ldapConfig);
         Preconditions.checkNotNull(ldapConfig.getHost());
@@ -40,6 +43,7 @@ public class LdapService {
         return connection;
     }
 
+    @Nonnull
     public List<Entry> ldapSearch(@Nonnull final LDAPConnection connection, @Nonnull final SearchRequest searchRequest) {
         LDAPEntrySource entrySource = null;
         ASN1OctetString cookie = null;
@@ -82,5 +86,12 @@ public class LdapService {
         }
 
         return ldapSearchResults;
+    }
+
+
+    @Nonnull
+    public List<Entry> searchLdapGroups(@Nonnull final LDAPConnection connection, @Nonnull final String searchDn, @Nonnull String[] attributesToReturn) {
+        SearchRequest searchRequest = new SearchRequest(searchDn, SearchScope.SUB, Filter.createEqualityFilter("objectClass", "group"), attributesToReturn);
+        return ldapSearch(connection, searchRequest);
     }
 }

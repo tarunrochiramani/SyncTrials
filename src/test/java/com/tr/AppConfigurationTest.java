@@ -3,6 +3,9 @@ package com.tr;
 import com.tr.ldap.LdapConfig;
 import com.tr.mongo.entity.Group;
 import com.tr.mongo.repository.GroupRepository;
+import com.unboundid.ldap.sdk.LDAPConnection;
+import com.unboundid.ldap.sdk.LDAPConnectionPool;
+import com.unboundid.ldap.sdk.LDAPException;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,6 +25,7 @@ public class AppConfigurationTest {
     private static Logger logger = Logger.getLogger(AppConfigurationTest.class);
 
     @Autowired private LdapConfig ldapConfig;
+    @Autowired private LDAPConnectionPool ldapConnectionPool;
     @Autowired private GroupRepository groupRepository;
 
     @Test
@@ -33,7 +37,18 @@ public class AppConfigurationTest {
         assertNotNull(ldapConfig.getPassword());
         assertNotNull(ldapConfig.getGroupDNs());
         assertFalse(ldapConfig.getGroupDNs().isEmpty());
+        assertFalse(ldapConfig.getGroupAttributes().isEmpty());
         logger.warn(ldapConfig);
+    }
+
+    @Test
+    public void canCreateAndReleaseConnectionFromConnectionPool() throws LDAPException {
+        assertNotNull(ldapConnectionPool);
+
+        LDAPConnection ldapConnection = ldapConnectionPool.getConnection();
+        assertNotNull(ldapConnection);
+
+        ldapConnectionPool.releaseConnection(ldapConnection);
     }
 
     @Test

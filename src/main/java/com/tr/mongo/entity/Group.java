@@ -3,6 +3,7 @@ package com.tr.mongo.entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,11 +13,10 @@ public class Group {
     private String id;
 
     private String dn;
-    private String objectGuid;
     private String attributeHash;
     private String memberAttributeHash;
     private boolean syncGroup;
-    private Map<String, List<String>> attributes;
+    private Map<String, List<String>> attributes = new HashMap<String, List<String>>();
 
 
     public String getDn() {
@@ -25,14 +25,6 @@ public class Group {
 
     public void setDn(String dn) {
         this.dn = dn;
-    }
-
-    public String getObjectGuid() {
-        return objectGuid;
-    }
-
-    public void setObjectGuid(String objectGuid) {
-        this.objectGuid = objectGuid;
     }
 
     public String getAttributeHash() {
@@ -75,7 +67,6 @@ public class Group {
 
         Group groupToCompare = (Group)object;
         if (this.dn.equals(groupToCompare.getDn()) &&
-            this.objectGuid.equals(groupToCompare.getObjectGuid()) &&
             this.attributeHash.equals(groupToCompare.getAttributeHash()) &&
             this.memberAttributeHash.equals(groupToCompare.getMemberAttributeHash()) &&
             this.syncGroup == groupToCompare.isSyncGroup()) {

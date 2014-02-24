@@ -52,11 +52,4 @@ public class GroupRepositoryTest {
         assertEquals(group, groupRetrieved);
     }
 
-    @Test
-    public void canFindByObjectGuid() {
-        Group groupRetrieved = repository.findByObjectGuid(group.getObjectGuid());
-
-        assertNotNull(groupRetrieved);
-        assertEquals(group, groupRetrieved);
-    }
 }

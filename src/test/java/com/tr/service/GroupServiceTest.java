@@ -3,8 +3,11 @@ package com.tr.service;
 import com.tr.AppConfiguration;
 import com.tr.ldap.LdapConfig;
 import com.tr.mongo.entity.Group;
+import com.tr.mongo.repository.GroupMemberRepository;
+import com.tr.mongo.repository.GroupRepository;
 import com.tr.utils.LdapPaging;
 import com.unboundid.ldap.sdk.Attribute;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,12 +29,20 @@ public class GroupServiceTest {
 
     @Autowired private GroupService groupService;
     @Autowired private LdapConfig ldapConfig;
+    @Autowired private GroupMemberRepository groupMemberRepository;
+    @Autowired private GroupRepository groupRepository;
 
-    private final Attribute[] attributes = new Attribute[] {new Attribute("member", "CN=testuser1 user1,OU=NestedTesting,DC=hs,DC=trcint,DC=com",
-            "CN=NestedTestGroup3,OU=NestedTesting,DC=hs,DC=trcint,DC=com", "CN=NestedTestGroup2,OU=NestedTesting,DC=hs,DC=trcint,DC=com"),
-            new Attribute("objectGUID", "98+zzyN2QU6rC8ZMfTC74Q"), new Attribute("canonicalName", "hs.trcint.com/NestedTesting/NestedTestGroup1")};
+    private final Attribute memberAttribute = new Attribute("member", "CN=testuser1 user1,OU=NestedTesting,DC=hs,DC=trcint,DC=com",
+            "CN=NestedTestGroup3,OU=NestedTesting,DC=hs,DC=trcint,DC=com", "CN=NestedTestGroup2,OU=NestedTesting,DC=hs,DC=trcint,DC=com");
+    private final Attribute objectGuidAttribute = new Attribute("objectGUID", "98+zzyN2QU6rC8ZMfTC74Q");
+    private final Attribute canonicalNameAttribute = new Attribute("canonicalName", "hs.trcint.com/NestedTesting/NestedTestGroup1");
     private static final String DN = "CN=NestedTestGroup1,OU=NestedTesting,DC=hs,DC=trcint,DC=com";
 
+    @After
+    public void cleanUp() {
+        groupMemberRepository.deleteAll();
+        groupRepository.deleteAll();
+    }
 
     @Test
     public void canGetHashValue() {
@@ -41,8 +52,9 @@ public class GroupServiceTest {
 
     @Test
     public void canChangeLdapGroupToGroup() {
-        Group group = groupService.ldapGroupToGroup(aSearchResultEntry().withDn(DN).withAttributes(attributes).build());
+        Group group = groupService.ldapGroupToGroup(aSearchResultEntry().withDn(DN).withAttributes(memberAttribute, objectGuidAttribute, canonicalNameAttribute).build());
 
+        assertNotNull(group);
         validateGroup(group);
         assertEquals(DN, group.getDn());
     }
@@ -62,6 +74,17 @@ public class GroupServiceTest {
         validateGroup(groups.toArray(new Group[]{}));
     }
 
+    @Test
+    public void canResolveGroupMembers() {
+        Group parentGroup = groupService.loadFromLdap(ldapConfig.getGroupDNs().get(0), ldapConfig.getGroupAttributes().toArray(new String[]{}), null).get(0);
+        assertNotNull(parentGroup);
+
+        int noOfMembers = groupService.resolveGroupMembers(parentGroup);
+        assertTrue(noOfMembers > 0);
+        assertEquals(groupMemberRepository.findByOwnerDn(parentGroup.getDn()).size(), noOfMembers);
+        assertEquals(parentGroup.getAttributes().get("member").size(), noOfMembers);
+    }
+
     private void validateGroup(Group... groups) {
         assertNotNull(groups);
         for (Group groupToVerify : groups) {
@@ -71,7 +94,4 @@ public class GroupServiceTest {
             assertNotNull(groupToVerify.getMemberAttributeHash());
         }
     }
-
-
-
 }

@@ -45,6 +45,6 @@ public class AppConfiguration {
     @Bean
     public LDAPConnectionPool ldapConnectionPool() throws LDAPException {
         LDAPConnection ldapConnection = ldapService.createConnection(ldapConfig);
-        return new LDAPConnectionPool(ldapConnection, 10);
+        return new LDAPConnectionPool(ldapConnection, 50);
     }
 }

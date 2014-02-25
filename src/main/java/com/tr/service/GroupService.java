@@ -3,6 +3,9 @@ package com.tr.service;
 import com.google.common.base.Preconditions;
 import com.tr.ldap.LdapService;
 import com.tr.mongo.entity.Group;
+import com.tr.mongo.entity.GroupMember;
+import com.tr.mongo.repository.GroupMemberRepository;
+import com.tr.mongo.repository.GroupRepository;
 import com.tr.utils.LdapPaging;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
@@ -33,6 +36,8 @@ public class GroupService implements EntityService<Group>  {
 
     @Autowired private LDAPConnectionPool ldapConnectionPool;
     @Autowired private LdapService ldapService;
+    @Autowired private GroupRepository groupRepository;
+    @Autowired private GroupMemberRepository groupMemberRepository;
 
     @Override
     @Nonnull
@@ -53,6 +58,7 @@ public class GroupService implements EntityService<Group>  {
 
             // Call differ. Differ should return only the list of groups that are being either added/updated
 
+
             ldapConnectionPool.releaseConnection(ldapConnection);
         } catch (LDAPException e) {
             log.error(e);
@@ -61,7 +67,55 @@ public class GroupService implements EntityService<Group>  {
         return groups;
     }
 
+    @Nonnull
+    public int resolveGroupMembers(@Nonnull final Group group) {
+        Preconditions.checkArgument(StringUtils.isNotBlank(group.getDn()));
+        Preconditions.checkNotNull(group.getAttributes().get("member"));
 
+        List<GroupMember> groupMemberList = new ArrayList<GroupMember>();
+
+        try {
+            LDAPConnection ldapConnection = ldapConnectionPool.getConnection();
+
+            List<Entry> ldapGroupMembers = ldapService.searchLdapGroupMembers(ldapConnection, group.getAttributes().get("member"));
+            for (Entry member : ldapGroupMembers) {
+                List<String> attributeValues = Arrays.asList(member.getAttributeValues("objectClass"));
+                String memberDn = member.getDN();
+
+                if (attributeValues.contains("user")) {
+                    groupMemberList.add(new GroupMember(group.getDn(), memberDn, GroupMember.TYPE.USER));
+                } else if (attributeValues.contains("group")) {
+                    // If already traversed, return
+                    List<GroupMember> existingGroupMembers = groupMemberRepository.findByOwnerDn(memberDn);
+                    if (existingGroupMembers != null && !existingGroupMembers.isEmpty()) {
+                        return existingGroupMembers.size();
+                    }
+
+                    // Add to Groups if not added.
+                    Group groupMember = ldapGroupToGroup(member);
+                    if (groupRepository.findByDn(memberDn) == null) {
+                        groupRepository.save(groupMember);
+                    }
+
+                    GroupMember nestedGroup = new GroupMember(group.getDn(), memberDn, GroupMember.TYPE.GROUP);
+                    groupMemberList.add(nestedGroup);
+                    groupMemberRepository.save(nestedGroup);
+                    resolveGroupMembers(groupMember); // recursive
+                }
+            }
+
+            // save group members
+            if (!groupMemberList.isEmpty()) {
+                groupMemberRepository.save(groupMemberList);
+            }
+
+            ldapConnectionPool.releaseConnection(ldapConnection);
+        } catch (LDAPException e) {
+            log.error(e);
+        }
+
+        return groupMemberList.size();
+    }
 
 
     @Nonnull

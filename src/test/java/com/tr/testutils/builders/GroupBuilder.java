@@ -1,8 +1,10 @@
 package com.tr.testutils.builders;
 
 import com.tr.mongo.entity.Group;
+import com.unboundid.ldap.sdk.Attribute;
 import org.apache.commons.lang3.builder.Builder;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +44,13 @@ public class GroupBuilder implements Builder<Group> {
         return this;
     }
 
+    public GroupBuilder withAttributes(Attribute... attributes) {
+        for (Attribute attribute : attributes) {
+            this.attributes.put(attribute.getName(), Arrays.asList(attribute.getValues()));
+        }
+        return this;
+    }
+
     @Override
     public Group build() {
         Group group = new Group();
@@ -49,6 +58,7 @@ public class GroupBuilder implements Builder<Group> {
         group.setAttributeHash(attributeHash);
         group.setMemberAttributeHash(memberAttributeHash);
         group.setSyncGroup(syncGroup);
+        group.setAttributes(attributes);
         return group;
     }
 }

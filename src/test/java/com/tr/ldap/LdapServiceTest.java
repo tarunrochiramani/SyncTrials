@@ -19,9 +19,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -80,5 +82,15 @@ public class LdapServiceTest {
         assertEquals(ldapConfig.getGroupDNs().get(0), entries.get(0).getDN());
         assertNotNull(entries.get(0).getAttributes());
         logger.info("Attributes returned: " + entries.get(0).getAttributes());
+    }
+
+    @Test
+    public void canSearchLdapGroupMembers() {
+        SearchRequest searchRequest = new SearchRequest(ldapConfig.getGroupDNs().get(0), SearchScope.SUB, Filter.createPresenceFilter("objectClass"));
+        List<Entry> entries = ldapService.ldapSearch(ldapConnection, searchRequest);
+
+        List<Entry> ldapGroupMembers = ldapService.searchLdapGroupMembers(ldapConnection, Arrays.asList(entries.get(0).getAttributeValues("member")));
+        assertNotNull(ldapGroupMembers);
+        assertFalse(ldapGroupMembers.isEmpty());
     }
 }

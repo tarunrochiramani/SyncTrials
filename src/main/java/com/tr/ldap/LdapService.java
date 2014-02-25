@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.tr.utils.LdapPaging;
 import com.unboundid.asn1.ASN1OctetString;
 import com.unboundid.ldap.sdk.Control;
+import com.unboundid.ldap.sdk.DNEntrySource;
 import com.unboundid.ldap.sdk.Entry;
 import com.unboundid.ldap.sdk.EntrySourceException;
 import com.unboundid.ldap.sdk.Filter;
@@ -66,9 +67,7 @@ public class LdapService {
             getAllResults = false;
         }
 
-
         try {
-
             do {
                 searchRequest.setControls(new Control[] { new SimplePagedResultsControl(pageSize, cookie) });
                 logger.info("Ldap search using : connection - " + connection + "\nsearchRequest - " + searchRequest);
@@ -80,20 +79,15 @@ public class LdapService {
                     if (entry == null) {
                         break;
                     }
-
-                    logger.info("Found: " + entry);
                     ldapSearchResults.add(entry);
                 }
 
                 cookie = null;
-                for (Control c : entrySource.getSearchResult().getResponseControls())
-                {
-                    if (c instanceof SimplePagedResultsControl)
-                    {
+                for (Control c : entrySource.getSearchResult().getResponseControls()) {
+                    if (c instanceof SimplePagedResultsControl) {
                         cookie = ((SimplePagedResultsControl) c).getCookie();
                     }
                 }
-
             } while ((cookie != null) && (cookie.getValueLength() > 0) && getAllResults == true);
         } catch (LDAPException e) {
             logger.error("Exception in Ldap Entry Source search." , e);
@@ -103,7 +97,6 @@ public class LdapService {
         finally {
             entrySource.close();
         }
-
         return ldapSearchResults;
     }
 
@@ -111,5 +104,26 @@ public class LdapService {
     public List<Entry> searchLdapGroups(@Nonnull final LDAPConnection connection, @Nullable LdapPaging ldapPaging, @Nonnull final String searchDn, @Nonnull String[] attributesToReturn) {
         SearchRequest searchRequest = new SearchRequest(searchDn, SearchScope.SUB, Filter.createEqualityFilter("objectClass", "group"), attributesToReturn);
         return ldapSearch(connection, searchRequest);
+    }
+
+    @Nonnull
+    public List<Entry> searchLdapGroupMembers(@Nonnull final LDAPConnection connection, @Nonnull final List<String> memberDNs) {
+        List<Entry> ldapGroupMembers = new ArrayList<Entry>();
+
+        try {
+            //TODO: May be fetch only desired attributes here?
+            DNEntrySource entrySource = new DNEntrySource(connection, memberDNs);
+            while (true) {
+                Entry entry = entrySource.nextEntry();
+                if (entry == null) {
+                    break;
+                }
+                ldapGroupMembers.add(entry);
+            }
+        } catch (EntrySourceException e) {
+            logger.error("Error during DNEntrySourceSearch for Group Members." , e);
+        }
+
+        return ldapGroupMembers;
     }
 }

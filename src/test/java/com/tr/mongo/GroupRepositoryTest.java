@@ -17,6 +17,7 @@ import static com.tr.testutils.builders.GroupBuilder.aGroup;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = AppConfiguration.class)
@@ -52,4 +53,10 @@ public class GroupRepositoryTest {
         assertEquals(group, groupRetrieved);
     }
 
+    @Test
+    public void cannotFindInvalidDN() {
+        Group groupRetrieved = repository.findByDn("InvalidGroupDn");
+
+        assertNull(groupRetrieved);
+    }
 }

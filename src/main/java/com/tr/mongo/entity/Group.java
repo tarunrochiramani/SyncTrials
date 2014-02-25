@@ -15,7 +15,7 @@ public class Group {
     private String dn;
     private String attributeHash;
     private String memberAttributeHash;
-    private boolean syncGroup;
+    private boolean syncGroup = false;
     private Map<String, List<String>> attributes = new HashMap<String, List<String>>();
 
 

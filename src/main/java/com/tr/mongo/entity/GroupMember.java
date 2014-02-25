@@ -17,6 +17,14 @@ public class GroupMember {
     private String memberDn;
     private TYPE type;
 
+    public GroupMember() {}
+
+    public GroupMember(String ownerDn, String memberDn, TYPE type) {
+        this.ownerDn = ownerDn;
+        this.memberDn = memberDn;
+        this.type = type;
+    }
+
     public String getOwnerDn() {
         return ownerDn;
     }

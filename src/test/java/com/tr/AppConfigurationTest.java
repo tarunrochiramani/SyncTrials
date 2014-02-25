@@ -2,6 +2,8 @@ package com.tr;
 
 import com.tr.ldap.LdapConfig;
 import com.tr.mongo.entity.Group;
+import com.tr.mongo.entity.GroupMember;
+import com.tr.mongo.repository.GroupMemberRepository;
 import com.tr.mongo.repository.GroupRepository;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
@@ -27,6 +29,7 @@ public class AppConfigurationTest {
     @Autowired private LdapConfig ldapConfig;
     @Autowired private LDAPConnectionPool ldapConnectionPool;
     @Autowired private GroupRepository groupRepository;
+    @Autowired private GroupMemberRepository groupMemberRepository;
 
     @Test
     public void canSetUpLdapConfig() {
@@ -57,5 +60,13 @@ public class AppConfigurationTest {
         List<Group> groupList = groupRepository.findAll();
         assertNotNull(groupList);
         assertTrue(groupList.isEmpty());
+    }
+
+    @Test
+    public void canCleanOutAllGroupMembers() {
+        groupRepository.deleteAll();
+        List<GroupMember> groupMemberList = groupMemberRepository.findAll();
+        assertNotNull(groupMemberList);
+        assertTrue(groupMemberList.isEmpty());
     }
 }

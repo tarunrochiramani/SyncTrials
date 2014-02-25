@@ -22,7 +22,7 @@ import static org.junit.Assert.assertNotNull;
 @ContextConfiguration(classes = AppConfiguration.class)
 public class GroupRepositoryTest {
 
-    @Autowired private GroupRepository repository;    ;
+    @Autowired private GroupRepository repository;
     private Group group = aGroup().build();
 
     @Before

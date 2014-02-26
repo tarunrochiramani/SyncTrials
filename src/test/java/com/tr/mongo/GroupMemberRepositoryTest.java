@@ -8,24 +8,31 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.List;
+import java.util.Random;
 
 import static com.tr.testutils.builders.GroupMemberBuilder.aGroupMember;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = AppConfiguration.class)
 public class GroupMemberRepositoryTest {
 
     @Autowired private GroupMemberRepository repository;
+
     private GroupMember groupMember = aGroupMember().build();
 
     @Before
     public void setUp() {
+        repository.deleteAll();
         repository.save(groupMember);
     }
 
@@ -59,5 +66,47 @@ public class GroupMemberRepositoryTest {
         assertNotNull(groupMembers);
         assertEquals(1, groupMembers.size());
         assertEquals(groupMember.getType(), groupMembers.get(0).getType());
+    }
+
+    @Test
+    public void canFindByOwnerDnWithPaging() {
+        int totalSize = 30;
+        addGroupMembersToDB(groupMember.getOwnerDn(), null, GroupMember.TYPE.USER, totalSize);
+
+        int page = 0;
+        int size = 10;
+
+        Pageable pageable = new PageRequest(page, size);
+
+        while (true) {
+            Page<GroupMember> result = repository.findByOwnerDn(groupMember.getOwnerDn(), pageable);
+
+            for (GroupMember groupMemberRetrieved : result.getContent()) {
+                assertEquals(groupMember.getOwnerDn(), groupMemberRetrieved.getOwnerDn());
+                assertNotNull(groupMemberRetrieved.getMemberDn());
+                assertEquals(GroupMember.TYPE.USER, groupMemberRetrieved.getType());
+            }
+
+
+            if (!result.hasNextPage()) {
+                break;
+            }
+
+            page++;
+            pageable = result.nextPageable();
+        }
+
+        assertEquals(page, totalSize/size);
+    }
+
+    private void addGroupMembersToDB(String ownerDn, String memberDn, GroupMember.TYPE type, int iterations) {
+        Random random = new Random();
+        for (int count = 0; count<iterations; count++) {
+            String randomString = Long.toString(random.nextLong());
+            String owner = ownerDn != null? ownerDn : randomString;
+            String member = memberDn != null? memberDn : randomString;
+
+            repository.save(aGroupMember().withOwnerDn(owner).withMemberDn(member).withType(type).build());
+        }
     }
 }

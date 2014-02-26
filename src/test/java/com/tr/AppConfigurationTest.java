@@ -64,7 +64,7 @@ public class AppConfigurationTest {
 
     @Test
     public void canCleanOutAllGroupMembers() {
-        groupRepository.deleteAll();
+        groupMemberRepository.deleteAll();
         List<GroupMember> groupMemberList = groupMemberRepository.findAll();
         assertNotNull(groupMemberList);
         assertTrue(groupMemberList.isEmpty());

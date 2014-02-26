@@ -50,7 +50,7 @@ public class LdapServiceTest {
     }
 
     @Test
-    public void canLdapSearch() {
+    public void canLdapSearch() throws Exception {
         SearchRequest searchRequest = new SearchRequest(ldapConfig.getGroupDNs().get(0), SearchScope.SUB, Filter.createPresenceFilter("objectClass"));
         List<Entry> entries = ldapService.ldapSearch(ldapConnection, searchRequest);
 
@@ -60,7 +60,7 @@ public class LdapServiceTest {
     }
 
     @Test
-    public void canLdapSearchWithPaging() {
+    public void canLdapSearchWithPaging() throws Exception {
         SearchRequest searchRequest = new SearchRequest(ldapConfig.getGroupDNs().get(0), SearchScope.SUB, Filter.createPresenceFilter("objectClass"));
         LdapPaging ldapPaging = new LdapPaging();
         List<Entry> entries = new ArrayList<Entry>();
@@ -75,7 +75,7 @@ public class LdapServiceTest {
     }
 
     @Test
-    public void canSearchLdapGroups() {
+    public void canSearchLdapGroups() throws Exception {
         List<Entry> entries = ldapService.searchLdapGroups(ldapConnection, null, ldapConfig.getGroupDNs().get(0), ldapConfig.getGroupAttributes().toArray(new String[]{}));
 
         assertNotNull(entries);
@@ -85,7 +85,7 @@ public class LdapServiceTest {
     }
 
     @Test
-    public void canSearchLdapGroupMembers() {
+    public void canSearchLdapGroupMembers() throws Exception {
         SearchRequest searchRequest = new SearchRequest(ldapConfig.getGroupDNs().get(0), SearchScope.SUB, Filter.createPresenceFilter("objectClass"));
         List<Entry> entries = ldapService.ldapSearch(ldapConnection, searchRequest);
 

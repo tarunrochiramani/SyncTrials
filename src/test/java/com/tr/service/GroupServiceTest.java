@@ -60,7 +60,7 @@ public class GroupServiceTest {
     }
 
     @Test
-    public void canLoadFromLdap() {
+    public void canLoadFromLdap() throws Exception {
         List<Group> groups = new ArrayList<Group>();
         for (String groupDn : ldapConfig.getGroupDNs()) {
             LdapPaging ldapPaging = new LdapPaging();
@@ -75,7 +75,7 @@ public class GroupServiceTest {
     }
 
     @Test
-    public void canResolveGroupMembers() {
+    public void canResolveGroupMembers() throws Exception {
         Group parentGroup = groupService.loadFromLdap(ldapConfig.getGroupDNs().get(0), ldapConfig.getGroupAttributes().toArray(new String[]{}), null).get(0);
         assertNotNull(parentGroup);
 

@@ -28,7 +28,7 @@ public class LdapService {
     private static final int DEFAULT_PAGE_SIZE = 50;
 
     @Nonnull
-    public LDAPConnection createConnection(@Nonnull final LdapConfig ldapConfig) {
+    public LDAPConnection createConnection(@Nonnull final LdapConfig ldapConfig) throws LDAPException {
         Preconditions.checkNotNull(ldapConfig);
         Preconditions.checkNotNull(ldapConfig.getHost());
         Preconditions.checkNotNull(ldapConfig.getPort());
@@ -37,23 +37,20 @@ public class LdapService {
 
         logger.info("Creating Ldap Connection with - " + ldapConfig);
 
-        LDAPConnection connection = null;
-        try {
-            connection = new LDAPConnection(ldapConfig.getHost(), ldapConfig.getPort(), ldapConfig.getBindDn(), ldapConfig.getPassword());
-            logger.info(connection);
-        } catch (LDAPException e) {
-            logger.info("Error during creating Ldap Connection." ,e);
-        }
+        LDAPConnection connection;
+        connection = new LDAPConnection(ldapConfig.getHost(), ldapConfig.getPort(), ldapConfig.getBindDn(), ldapConfig.getPassword());
+        logger.info(connection);
+
         return connection;
     }
 
     @Nonnull
-    public List<Entry> ldapSearch(@Nonnull final LDAPConnection connection, @Nonnull final SearchRequest searchRequest) {
+    public List<Entry> ldapSearch(@Nonnull final LDAPConnection connection, @Nonnull final SearchRequest searchRequest) throws EntrySourceException, LDAPException {
         return ldapSearch(connection, searchRequest, null);
     }
 
     @Nonnull
-    public List<Entry> ldapSearch(@Nonnull final LDAPConnection connection, @Nonnull final SearchRequest searchRequest, @Nullable LdapPaging ldapPaging) {
+    public List<Entry> ldapSearch(@Nonnull final LDAPConnection connection, @Nonnull final SearchRequest searchRequest, @Nullable LdapPaging ldapPaging) throws LDAPException, EntrySourceException {
         LDAPEntrySource entrySource = null;
         ASN1OctetString cookie = null;
         List<Entry> ldapSearchResults = new ArrayList();
@@ -91,8 +88,10 @@ public class LdapService {
             } while ((cookie != null) && (cookie.getValueLength() > 0) && getAllResults == true);
         } catch (LDAPException e) {
             logger.error("Exception in Ldap Entry Source search." , e);
+            throw e;
         } catch (EntrySourceException e) {
             logger.error("Exception in Ldap Entry Source search." , e);
+            throw e;
         }
         finally {
             entrySource.close();
@@ -101,13 +100,13 @@ public class LdapService {
     }
 
     @Nonnull
-    public List<Entry> searchLdapGroups(@Nonnull final LDAPConnection connection, @Nullable LdapPaging ldapPaging, @Nonnull final String searchDn, @Nonnull String[] attributesToReturn) {
+    public List<Entry> searchLdapGroups(@Nonnull final LDAPConnection connection, @Nullable LdapPaging ldapPaging, @Nonnull final String searchDn, @Nonnull String[] attributesToReturn) throws EntrySourceException, LDAPException {
         SearchRequest searchRequest = new SearchRequest(searchDn, SearchScope.SUB, Filter.createEqualityFilter("objectClass", "group"), attributesToReturn);
         return ldapSearch(connection, searchRequest);
     }
 
     @Nonnull
-    public List<Entry> searchLdapGroupMembers(@Nonnull final LDAPConnection connection, @Nonnull final List<String> memberDNs) {
+    public List<Entry> searchLdapGroupMembers(@Nonnull final LDAPConnection connection, @Nonnull final List<String> memberDNs) throws EntrySourceException {
         List<Entry> ldapGroupMembers = new ArrayList<Entry>();
 
         try {
@@ -122,6 +121,7 @@ public class LdapService {
             }
         } catch (EntrySourceException e) {
             logger.error("Error during DNEntrySourceSearch for Group Members." , e);
+            throw e;
         }
 
         return ldapGroupMembers;

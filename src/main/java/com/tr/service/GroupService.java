@@ -1,6 +1,8 @@
 package com.tr.service;
 
 import com.google.common.base.Preconditions;
+import com.tr.exception.GroupLoadingException;
+import com.tr.exception.GroupMemberLoadingException;
 import com.tr.ldap.LdapService;
 import com.tr.mongo.entity.Group;
 import com.tr.mongo.entity.GroupMember;
@@ -9,6 +11,7 @@ import com.tr.mongo.repository.GroupRepository;
 import com.tr.utils.LdapPaging;
 import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.Entry;
+import com.unboundid.ldap.sdk.EntrySourceException;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
 import com.unboundid.ldap.sdk.LDAPException;
@@ -41,7 +44,7 @@ public class GroupService implements EntityService<Group>  {
 
     @Override
     @Nonnull
-    public List<Group> loadFromLdap(@Nonnull final String searchDn, @Nonnull String[] attributesToReturn, @Nullable LdapPaging ldapPaging) {
+    public List<Group> loadFromLdap(@Nonnull final String searchDn, @Nonnull String[] attributesToReturn, @Nullable LdapPaging ldapPaging) throws GroupLoadingException {
         Preconditions.checkArgument(StringUtils.isNotBlank(searchDn));
 
         List<Group> groups = new ArrayList<Group>();
@@ -62,13 +65,17 @@ public class GroupService implements EntityService<Group>  {
             ldapConnectionPool.releaseConnection(ldapConnection);
         } catch (LDAPException e) {
             log.error(e);
+            throw new GroupLoadingException(e);
+        } catch (EntrySourceException e) {
+            log.error(e);
+            throw new GroupLoadingException(e);
         }
 
         return groups;
     }
 
     @Nonnull
-    public int resolveGroupMembers(@Nonnull final Group group) {
+    public int resolveGroupMembers(@Nonnull final Group group) throws GroupMemberLoadingException {
         Preconditions.checkArgument(StringUtils.isNotBlank(group.getDn()));
         Preconditions.checkNotNull(group.getAttributes().get("member"));
 
@@ -112,6 +119,10 @@ public class GroupService implements EntityService<Group>  {
             ldapConnectionPool.releaseConnection(ldapConnection);
         } catch (LDAPException e) {
             log.error(e);
+            throw new GroupMemberLoadingException(e);
+        } catch (EntrySourceException e) {
+            log.error(e);
+            throw new GroupMemberLoadingException(e);
         }
 
         return groupMemberList.size();

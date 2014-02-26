@@ -1,13 +1,9 @@
 package com.tr.exception;
 
-public class GroupMemberLoadingException extends Exception {
+public class GroupMemberLoadingException extends LoadingException {
     private static final String errorMsg = "Unable to load Groups from source";
 
     public GroupMemberLoadingException(Throwable cause) {
-        super(cause);
-    }
-
-    public String toString() {
-        return errorMsg + " - " + getCause();
+        super(errorMsg, cause);
     }
 }

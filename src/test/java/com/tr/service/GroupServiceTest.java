@@ -8,6 +8,7 @@ import com.tr.mongo.repository.GroupRepository;
 import com.tr.utils.LdapPaging;
 import com.unboundid.ldap.sdk.Attribute;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,7 @@ public class GroupServiceTest {
     private final Attribute canonicalNameAttribute = new Attribute("canonicalName", "hs.trcint.com/NestedTesting/NestedTestGroup1");
     private static final String DN = "CN=NestedTestGroup1,OU=NestedTesting,DC=hs,DC=trcint,DC=com";
 
+    @Before
     @After
     public void cleanUp() {
         groupMemberRepository.deleteAll();
@@ -55,7 +57,7 @@ public class GroupServiceTest {
         Group group = groupService.ldapGroupToGroup(aSearchResultEntry().withDn(DN).withAttributes(memberAttribute, objectGuidAttribute, canonicalNameAttribute).build());
 
         assertNotNull(group);
-        validateGroup(group);
+        validateGroup(false, group);
         assertEquals(DN, group.getDn());
     }
 
@@ -71,7 +73,44 @@ public class GroupServiceTest {
 
         assertFalse(groups.isEmpty());
         assertTrue(groups.size() > 1);
-        validateGroup(groups.toArray(new Group[]{}));
+        validateGroup(true, groups.toArray(new Group[]{}));
+    }
+
+    @Test
+    public void canLoadDiffAndSaveWhenNoGroupAddedToDB() throws Exception {
+        int noOfGroups = groupRepository.findAll().size();
+        List<Group> groupList = groupService.loadDiffAndSave(ldapConfig.getGroupDNs().get(0), ldapConfig.getGroupAttributes().toArray(new String[]{}), null);
+
+        assertNotNull(groupList);
+        assertEquals(noOfGroups + 1, groupRepository.findAll().size());
+        assertEquals(noOfGroups + 1, groupList.size());
+    }
+
+    @Test
+    public void canLoadDiffAndSaveWhenGroupExistsDB() throws Exception {
+        groupService.loadDiffAndSave(ldapConfig.getGroupDNs().get(0), ldapConfig.getGroupAttributes().toArray(new String[]{}), null);
+
+        int noOfGroups = groupRepository.findAll().size();
+        List<Group> groupList = groupService.loadDiffAndSave(ldapConfig.getGroupDNs().get(0), ldapConfig.getGroupAttributes().toArray(new String[]{}), null);
+
+        assertNotNull(groupList);
+        assertEquals(noOfGroups, groupRepository.findAll().size());
+        assertTrue(groupList.isEmpty());
+    }
+
+    @Test
+    public void canChangeExistingGroupToSyncingWhenConfigured() throws Exception {
+        List<Group> groups = groupService.loadDiffAndSave(ldapConfig.getGroupDNs().get(0), ldapConfig.getGroupAttributes().toArray(new String[]{}), null);
+        groups.get(0).setSyncGroup(false);
+        groupRepository.save(groups.get(0));
+
+        int noOfGroups = groupRepository.findAll().size();
+        List<Group> groupList = groupService.loadDiffAndSave(ldapConfig.getGroupDNs().get(0), ldapConfig.getGroupAttributes().toArray(new String[]{}), null);
+
+        assertNotNull(groupList);
+        assertEquals(noOfGroups, groupRepository.findAll().size());
+        assertEquals(1, groupList.size());
+        assertTrue(groupList.get(0).isSyncGroup());
     }
 
     @Test
@@ -85,13 +124,14 @@ public class GroupServiceTest {
         assertEquals(parentGroup.getAttributes().get("member").size(), noOfMembers);
     }
 
-    private void validateGroup(Group... groups) {
+    private void validateGroup(boolean syncing, Group... groups) {
         assertNotNull(groups);
         for (Group groupToVerify : groups) {
             assertFalse(groupToVerify.getAttributes().isEmpty());
             assertNotNull(groupToVerify.getDn());
             assertNotNull(groupToVerify.getAttributeHash());
             assertNotNull(groupToVerify.getMemberAttributeHash());
+            assertEquals(syncing, groupToVerify.isSyncGroup());
         }
     }
 }

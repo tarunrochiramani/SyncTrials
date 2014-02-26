@@ -59,9 +59,6 @@ public class GroupService implements EntityService<Group>  {
                 groups.add(groupToAdd);
             }
 
-            // Call differ. Differ should return only the list of groups that are being either added/updated
-
-
             ldapConnectionPool.releaseConnection(ldapConnection);
         } catch (LDAPException e) {
             log.error(e);
@@ -72,6 +69,28 @@ public class GroupService implements EntityService<Group>  {
         }
 
         return groups;
+    }
+
+    public List<Group> loadDiffAndSave(@Nonnull final String searchDn, @Nonnull String[] attributesToReturn, @Nullable LdapPaging ldapPaging) throws GroupLoadingException {
+        List<Group> groupList = loadFromLdap(searchDn, attributesToReturn, ldapPaging);
+        List<Group> groupAddedToDb = new ArrayList<Group>();
+
+        for (Group group : groupList) {
+            Group existingGroup = groupRepository.findByDn(group.getDn());
+
+            if (existingGroup != null) {
+                if (existingGroup.isSyncGroup()) {
+                    continue;
+                } else {
+                    group.setId(existingGroup.getId());
+                    group.setSyncGroup(true);
+                }
+            }
+
+            Group groupAdded = groupRepository.save(group);
+            groupAddedToDb.add(groupAdded);
+        }
+        return groupAddedToDb;
     }
 
     @Nonnull

@@ -119,9 +119,8 @@ public class GroupServiceTest {
         assertNotNull(parentGroup);
 
         int noOfMembers = groupService.resolveGroupMembers(parentGroup);
-        assertTrue(noOfMembers > 0);
-        assertEquals(groupMemberRepository.findByOwnerDn(parentGroup.getDn()).size(), noOfMembers);
-        assertEquals(parentGroup.getAttributes().get("member").size(), noOfMembers);
+        assertTrue(noOfMembers >= parentGroup.getAttributes().get("member").size());
+        assertEquals(groupMemberRepository.findByOwnerDn(parentGroup.getDn()).size(), parentGroup.getAttributes().get("member").size());
     }
 
     private void validateGroup(boolean syncing, Group... groups) {

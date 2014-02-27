@@ -41,8 +41,11 @@ public class SyncEngine {
 
     private void resolveGroupMemberships(List<Group> groupList) throws GroupMemberLoadingException {
         for (Group group : groupList) {
-            groupService.resolveGroupMembers(group);
-            groupMemberService.flattenGroupMemberships(group.getDn());
+            int resolvedGroupMembers = groupService.resolveGroupMembers(group);
+            int flattenedGroupMembers = groupMemberService.flattenGroupMemberships(group.getDn());
+            logger.info("Resolved Group Members: " + resolvedGroupMembers + " for group: " + group.getDn());
+            logger.info("Flattened Group Members: " + flattenedGroupMembers + " for group: " + group.getDn());
+
         }
     }
 }

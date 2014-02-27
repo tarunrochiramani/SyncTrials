@@ -31,6 +31,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -97,50 +98,115 @@ public class GroupService implements EntityService<Group>  {
         return groupAddedToDb;
     }
 
+//    @Nonnull
+//    public int resolveGroupMembers(@Nonnull final Group group) throws GroupMemberLoadingException {
+//        Preconditions.checkArgument(StringUtils.isNotBlank(group.getDn()));
+//        Preconditions.checkNotNull(group.getAttributes().get("member"));
+//
+//        List<GroupMember> groupMemberList = new ArrayList<GroupMember>();
+//        try {
+//
+//            LDAPConnection ldapConnection = ldapConnectionPool.getConnection();
+//            List<Entry> ldapGroupMembers = ldapService.searchLdapGroupMembers(ldapConnection, group.getAttributes().get("member"));
+//
+//            for (Entry member : ldapGroupMembers) {
+//                if (groupMemberRepository.findByOwnerAndMemberDn(group.getDn(), member.getDN()) != null) {
+//                    continue;
+//                }
+//
+//                List<String> attributeValues = Arrays.asList(member.getAttributeValues("objectClass"));
+//                if (attributeValues.contains("user")) {
+//                    groupMemberList.add(new GroupMember(group.getDn(), member.getDN(), GroupMember.TYPE.USER));
+//                } else if (attributeValues.contains("group")) {
+//
+//                    // Add to Groups if not added.
+//                    Group groupMember = ldapGroupToGroup(member);
+//                    if (groupRepository.findByDn(member.getDN()) == null) {
+//                        groupRepository.save(groupMember);
+//                    }
+//
+//                    GroupMember nestedGroup = groupMemberRepository.save(new GroupMember(group.getDn(), member.getDN(), GroupMember.TYPE.GROUP));
+//                    groupMemberList.add(nestedGroup);
+//
+//                    // If already traversed, iterate the next one
+//                    List<GroupMember> existingGroupMembers = groupMemberRepository.findByOwnerDn(member.getDN());
+//                    if (existingGroupMembers != null && !existingGroupMembers.isEmpty()) {
+//                        continue;
+//                    }
+//
+//                    resolveGroupMembers(groupMember); // recursive
+//                }
+//            }
+//
+//            // save group members
+//            if (!groupMemberList.isEmpty()) {
+//                groupMemberRepository.save(groupMemberList);
+//            }
+//
+//            ldapConnectionPool.releaseConnection(ldapConnection);
+//        } catch (LDAPException e) {
+//            log.error(e);
+//            throw new GroupMemberLoadingException(e);
+//        } catch (EntrySourceException e) {
+//            log.error(e);
+//            throw new GroupMemberLoadingException(e);
+//        }
+//
+//        return groupMemberList.size();
+//    }
+
     @Nonnull
-    public int resolveGroupMembers(@Nonnull final Group group) throws GroupMemberLoadingException {
-        Preconditions.checkArgument(StringUtils.isNotBlank(group.getDn()));
-        Preconditions.checkNotNull(group.getAttributes().get("member"));
+    public int resolveGroupMembers(@Nonnull final Group parentGroup) throws GroupMemberLoadingException {
+        Preconditions.checkArgument(StringUtils.isNotBlank(parentGroup.getDn()));
+        Preconditions.checkNotNull(parentGroup.getAttributes().get("member"));
 
-        List<GroupMember> groupMemberList = new ArrayList<GroupMember>();
+        int count = 0;
+        LinkedList<Group> groupListToResolve = new LinkedList<Group>();
+        groupListToResolve.add(parentGroup);
         try {
-
             LDAPConnection ldapConnection = ldapConnectionPool.getConnection();
-            List<Entry> ldapGroupMembers = ldapService.searchLdapGroupMembers(ldapConnection, group.getAttributes().get("member"));
 
-            for (Entry member : ldapGroupMembers) {
-                if (groupMemberRepository.findByOwnerAndMemberDn(group.getDn(), member.getDN()) != null) {
-                    continue;
-                }
 
-                List<String> attributeValues = Arrays.asList(member.getAttributeValues("objectClass"));
+            while (groupListToResolve.peek() != null) {
+                Group groupToResolve = groupListToResolve.poll();
+                List<GroupMember> groupMemberList = new ArrayList<GroupMember>();
 
-                if (attributeValues.contains("user")) {
-                    groupMemberList.add(new GroupMember(group.getDn(), member.getDN(), GroupMember.TYPE.USER));
-                } else if (attributeValues.contains("group")) {
+                List<Entry> ldapGroupMembers = ldapService.searchLdapGroupMembers(ldapConnection, groupToResolve.getAttributes().get("member"));
+                for (Entry member : ldapGroupMembers) {
 
-                    // Add to Groups if not added.
-                    Group groupMember = ldapGroupToGroup(member);
-                    if (groupRepository.findByDn(member.getDN()) == null) {
-                        groupRepository.save(groupMember);
-                    }
-
-                    GroupMember nestedGroup = groupMemberRepository.save(new GroupMember(group.getDn(), member.getDN(), GroupMember.TYPE.GROUP));
-                    groupMemberList.add(nestedGroup);
-
-                    // If already traversed, iterate the next one
-                    List<GroupMember> existingGroupMembers = groupMemberRepository.findByOwnerDn(member.getDN());
-                    if (existingGroupMembers != null && !existingGroupMembers.isEmpty()) {
+                    // If membership is already resolved, do nothing.
+                    if (groupMemberRepository.findByOwnerAndMemberDn(groupToResolve.getDn(), member.getDN()) != null) {
                         continue;
                     }
 
-                    resolveGroupMembers(groupMember); // recursive
-                }
-            }
+                    List<String> attributeValues = Arrays.asList(member.getAttributeValues("objectClass"));
+                    if (attributeValues.contains("user")) {
+                        groupMemberList.add(new GroupMember(groupToResolve.getDn(), member.getDN(), GroupMember.TYPE.USER));
+                    } else if (attributeValues.contains("group")) {
+                        groupMemberList.add(new GroupMember(groupToResolve.getDn(), member.getDN(), GroupMember.TYPE.GROUP));
 
-            // save group members
-            if (!groupMemberList.isEmpty()) {
-                groupMemberRepository.save(groupMemberList);
+                        // Add to Groups if not added.
+                        Group nestedGroup = ldapGroupToGroup(member);
+                        if (groupRepository.findByDn(member.getDN()) == null) {
+                            groupRepository.save(nestedGroup);
+                        }
+
+                        // Resolve this group only if it has not been resolved before to break out the circular nested groups scenario.
+                        if (groupMemberRepository.findByOwnerDn(member.getDN()).isEmpty()) {
+                            groupListToResolve.add(nestedGroup);
+                        }
+                    }
+                }
+
+                // save group members
+                if (!groupMemberList.isEmpty()) {
+                    groupMemberRepository.save(groupMemberList);
+                    count += groupMemberList.size();
+                } else {
+                    int alreadyResolved = groupMemberRepository.findByOwnerDn(groupToResolve.getDn()).size();
+                    log.info("Memberships for Group: " + groupToResolve.getDn() + " have already been resolved to noOfMembers - " + alreadyResolved);
+                    count += alreadyResolved;
+                }
             }
 
             ldapConnectionPool.releaseConnection(ldapConnection);
@@ -152,8 +218,9 @@ public class GroupService implements EntityService<Group>  {
             throw new GroupMemberLoadingException(e);
         }
 
-        return groupMemberList.size();
+        return count;
     }
+
 
 
     @Nonnull

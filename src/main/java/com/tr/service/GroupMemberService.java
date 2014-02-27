@@ -45,9 +45,10 @@ public class GroupMemberService {
 
     public int flattenGroupMemberships(@Nonnull final String groupDn) {
         int count = 0;
+
+        Set<String> traversedDns = new HashSet<String>();
         LinkedList<String> nestedGroups = new LinkedList<String>();
         nestedGroups.add(groupDn);
-        Set<String> traversedDns = new HashSet<String>();
 
         while (nestedGroups.peek() != null) {
             String groupDnToSearch = nestedGroups.poll();
@@ -58,9 +59,11 @@ public class GroupMemberService {
 
             // search users
             EntityPaging entityPaging = new EntityPaging(PAGE_SIZE);
-            List<GroupMemberFlattened> flatMembers = new ArrayList<GroupMemberFlattened>();
             do {
+                List<GroupMemberFlattened> flatMembers = new ArrayList<GroupMemberFlattened>();
                 List<GroupMember> memberList = findGroupMembers(groupDnToSearch, GroupMember.TYPE.USER, entityPaging);
+
+                log.info("+++++++++++++++++++++++++Start Paging while Flattening+++++++++++++++");
 
                 for (GroupMember member : memberList) {
                     if (groupMemberFlattenedRepository.findByOwnerAndMemberDn(groupDn, member.getMemberDn()) == null) {
@@ -71,6 +74,7 @@ public class GroupMemberService {
                     }
                 }
                 groupMemberFlattenedRepository.save(flatMembers);
+                log.info("+++++++++++++++++++++++++End Paging while Flattening+++++++++++++++");
             } while (entityPaging.hasMore());
 
             // search nested members

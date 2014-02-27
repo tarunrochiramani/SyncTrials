@@ -1,7 +1,6 @@
 package com.tr.mongo.repository;
 
 import com.tr.mongo.entity.GroupMember;
-import com.tr.mongo.entity.GroupMemberFlattened;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;

@@ -19,6 +19,9 @@ public class LdapConfig {
     @Value("${ad.password}")
     private String password;
 
+    @Value("${ad.baseDn}")
+    private String baseDn;
+
     @Value("#{'${group.dn}'.split(';')}")
     private List<String> groupDNs;
 
@@ -39,6 +42,10 @@ public class LdapConfig {
 
     public String getPassword() {
         return password;
+    }
+
+    public String getBaseDn() {
+        return baseDn;
     }
 
     public List<String> getGroupDNs() {

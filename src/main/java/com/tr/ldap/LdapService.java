@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,12 +46,12 @@ public class LdapService {
     }
 
     @Nonnull
-    public List<Entry> ldapSearch(@Nonnull final LDAPConnection connection, @Nonnull final SearchRequest searchRequest) throws EntrySourceException, LDAPException {
+    public List<Entry> ldapSearch(@Nonnull final LDAPConnection connection, @Nonnull final SearchRequest searchRequest) throws EntrySourceException, LDAPException, IOException {
         return ldapSearch(connection, searchRequest, null);
     }
 
     @Nonnull
-    public List<Entry> ldapSearch(@Nonnull final LDAPConnection connection, @Nonnull final SearchRequest searchRequest, @Nullable LdapPaging ldapPaging) throws LDAPException, EntrySourceException {
+    public List<Entry> ldapSearch(@Nonnull final LDAPConnection connection, @Nonnull final SearchRequest searchRequest, @Nullable LdapPaging ldapPaging) throws LDAPException, EntrySourceException, IOException {
         LDAPEntrySource entrySource = null;
         ASN1OctetString cookie = null;
         List<Entry> ldapSearchResults = new ArrayList();
@@ -86,6 +87,11 @@ public class LdapService {
                     }
                 }
             } while ((cookie != null) && (cookie.getValueLength() > 0) && getAllResults == true);
+
+            if (ldapPaging != null) {
+                ldapPaging.setPaginationCookie(cookie.getValue());
+            }
+
         } catch (LDAPException e) {
             logger.error("Exception in Ldap Entry Source search." , e);
             throw e;
@@ -100,7 +106,7 @@ public class LdapService {
     }
 
     @Nonnull
-    public List<Entry> searchLdapGroups(@Nonnull final LDAPConnection connection, @Nullable LdapPaging ldapPaging, @Nonnull final String searchDn, @Nonnull String[] attributesToReturn) throws EntrySourceException, LDAPException {
+    public List<Entry> searchLdapGroups(@Nonnull final LDAPConnection connection, @Nullable LdapPaging ldapPaging, @Nonnull final String searchDn, @Nonnull String[] attributesToReturn) throws EntrySourceException, LDAPException, IOException {
         SearchRequest searchRequest = new SearchRequest(searchDn, SearchScope.SUB, Filter.createEqualityFilter("objectClass", "group"), attributesToReturn);
         return ldapSearch(connection, searchRequest);
     }

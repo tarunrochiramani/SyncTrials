@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
@@ -66,6 +67,9 @@ public class GroupService implements EntityService<Group>  {
         } catch (EntrySourceException e) {
             log.error(e);
             throw new GroupLoadingException(e);
+        } catch (IOException e) {
+            log.error(e);
+            throw new GroupLoadingException(e);
         }
 
         return groups;
@@ -99,32 +103,36 @@ public class GroupService implements EntityService<Group>  {
         Preconditions.checkNotNull(group.getAttributes().get("member"));
 
         List<GroupMember> groupMemberList = new ArrayList<GroupMember>();
-
         try {
-            LDAPConnection ldapConnection = ldapConnectionPool.getConnection();
 
+            LDAPConnection ldapConnection = ldapConnectionPool.getConnection();
             List<Entry> ldapGroupMembers = ldapService.searchLdapGroupMembers(ldapConnection, group.getAttributes().get("member"));
+
             for (Entry member : ldapGroupMembers) {
+                if (groupMemberRepository.findByOwnerAndMemberDn(group.getDn(), member.getDN()) != null) {
+                    continue;
+                }
+
                 List<String> attributeValues = Arrays.asList(member.getAttributeValues("objectClass"));
-                String memberDn = member.getDN();
 
                 if (attributeValues.contains("user")) {
-                    groupMemberList.add(new GroupMember(group.getDn(), memberDn, GroupMember.TYPE.USER));
+                    groupMemberList.add(new GroupMember(group.getDn(), member.getDN(), GroupMember.TYPE.USER));
                 } else if (attributeValues.contains("group")) {
-                    // If already traversed, return
-                    List<GroupMember> existingGroupMembers = groupMemberRepository.findByOwnerDn(memberDn);
-                    if (existingGroupMembers != null && !existingGroupMembers.isEmpty()) {
-                        return existingGroupMembers.size();
-                    }
 
                     // Add to Groups if not added.
                     Group groupMember = ldapGroupToGroup(member);
-                    if (groupRepository.findByDn(memberDn) == null) {
+                    if (groupRepository.findByDn(member.getDN()) == null) {
                         groupRepository.save(groupMember);
                     }
 
-                    GroupMember nestedGroup = groupMemberRepository.save(new GroupMember(group.getDn(), memberDn, GroupMember.TYPE.GROUP));
+                    GroupMember nestedGroup = groupMemberRepository.save(new GroupMember(group.getDn(), member.getDN(), GroupMember.TYPE.GROUP));
                     groupMemberList.add(nestedGroup);
+
+                    // If already traversed, iterate the next one
+                    List<GroupMember> existingGroupMembers = groupMemberRepository.findByOwnerDn(member.getDN());
+                    if (existingGroupMembers != null && !existingGroupMembers.isEmpty()) {
+                        continue;
+                    }
 
                     resolveGroupMembers(groupMember); // recursive
                 }

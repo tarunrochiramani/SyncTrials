@@ -1,5 +1,6 @@
 package com.tr.mongo.entity;
 
+import org.springframework.data.annotation.Id;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -7,6 +8,9 @@ public class GroupMemberFlattened {
 
     private String ownerDn;
     private String memberDn;
+
+    @Id
+    private String id;
 
     public GroupMemberFlattened() {}
 

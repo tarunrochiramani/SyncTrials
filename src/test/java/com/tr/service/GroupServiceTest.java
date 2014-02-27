@@ -68,7 +68,7 @@ public class GroupServiceTest {
             LdapPaging ldapPaging = new LdapPaging();
             do {
                 groups.addAll(groupService.loadFromLdap(groupDn, ldapConfig.getGroupAttributes().toArray(new String[]{}), ldapPaging));
-            } while (ldapPaging.getPaginationCookie() != null && ldapPaging.getPaginationCookie().length > 0);
+            } while (ldapPaging.hasMore());
         }
 
         assertFalse(groups.isEmpty());

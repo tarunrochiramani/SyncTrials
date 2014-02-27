@@ -3,6 +3,8 @@ package com.tr;
 import com.tr.ldap.LdapConfig;
 import com.tr.mongo.entity.Group;
 import com.tr.mongo.entity.GroupMember;
+import com.tr.mongo.entity.GroupMemberFlattened;
+import com.tr.mongo.repository.GroupMemberFlattenedRepository;
 import com.tr.mongo.repository.GroupMemberRepository;
 import com.tr.mongo.repository.GroupRepository;
 import com.unboundid.ldap.sdk.LDAPConnection;
@@ -30,6 +32,7 @@ public class AppConfigurationTest {
     @Autowired private LDAPConnectionPool ldapConnectionPool;
     @Autowired private GroupRepository groupRepository;
     @Autowired private GroupMemberRepository groupMemberRepository;
+    @Autowired private GroupMemberFlattenedRepository groupMemberFlattenedRepository;
 
     @Test
     public void canSetUpLdapConfig() {
@@ -66,6 +69,14 @@ public class AppConfigurationTest {
     public void canCleanOutAllGroupMembers() {
         groupMemberRepository.deleteAll();
         List<GroupMember> groupMemberList = groupMemberRepository.findAll();
+        assertNotNull(groupMemberList);
+        assertTrue(groupMemberList.isEmpty());
+    }
+
+    @Test
+    public void canCleanOutAllGroupMembersFlattened() {
+        groupMemberFlattenedRepository.deleteAll();
+        List<GroupMemberFlattened> groupMemberList = groupMemberFlattenedRepository.findAll();
         assertNotNull(groupMemberList);
         assertTrue(groupMemberList.isEmpty());
     }

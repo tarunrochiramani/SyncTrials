@@ -6,6 +6,13 @@ import java.io.IOException;
 public class LdapPaging {
     private int pageSize;
     private ByteArrayOutputStream pagedResultsCookieByteArray = new ByteArrayOutputStream();
+    private boolean hasMore = false;
+
+    public LdapPaging() {}
+
+    public LdapPaging(int pageSize) {
+        this.pageSize = pageSize;
+    }
 
 
     public int getPageSize() {
@@ -22,6 +29,7 @@ public class LdapPaging {
         } else {
             pagedResultsCookieByteArray = new ByteArrayOutputStream();
         }
+        hasMore = false;
     }
 
     public byte[] getPaginationCookie() {
@@ -31,8 +39,13 @@ public class LdapPaging {
 
     public void setPaginationCookie(byte[] cookie) throws IOException {
         resetPagedResultsCookieByteArray();
-        if (cookie != null) {
+        if (cookie != null && cookie.length > 0) {
             pagedResultsCookieByteArray.write(cookie);
+            hasMore = true;
         }
+    }
+
+    public boolean hasMore() {
+        return hasMore;
     }
 }

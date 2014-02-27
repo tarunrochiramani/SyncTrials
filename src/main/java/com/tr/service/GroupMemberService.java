@@ -63,10 +63,12 @@ public class GroupMemberService {
                 List<GroupMember> memberList = findGroupMembers(groupDnToSearch, GroupMember.TYPE.USER, entityPaging);
 
                 for (GroupMember member : memberList) {
-                    flatMembers.add(new GroupMemberFlattened(groupDn, member.getMemberDn()));
-                    count++;
+                    if (groupMemberFlattenedRepository.findByOwnerAndMemberDn(groupDn, member.getMemberDn()) == null) {
+                        flatMembers.add(new GroupMemberFlattened(groupDn, member.getMemberDn()));
+                        count++;
 
-                    log.info("Adding User: " + member.getMemberDn() + " to group: " + groupDn);
+                        log.info("Adding user: " + member.getMemberDn() + " to group: " + groupDn);
+                    }
                 }
                 groupMemberFlattenedRepository.save(flatMembers);
             } while (entityPaging.hasMore());
@@ -83,7 +85,6 @@ public class GroupMemberService {
 
             traversedDns.add(groupDnToSearch);
         }
-
         return count;
     }
 

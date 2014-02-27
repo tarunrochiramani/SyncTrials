@@ -66,7 +66,7 @@ public class LdapServiceTest {
         List<Entry> entries = new ArrayList<Entry>();
         do {
             entries.addAll(ldapService.ldapSearch(ldapConnection, searchRequest, ldapPaging));
-        } while (ldapPaging.getPaginationCookie() != null && ldapPaging.getPaginationCookie().length > 0);
+        } while (ldapPaging.hasMore());
 
 
         assertNotNull(entries);

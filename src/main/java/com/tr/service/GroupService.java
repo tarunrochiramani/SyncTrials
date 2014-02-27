@@ -123,9 +123,9 @@ public class GroupService implements EntityService<Group>  {
                         groupRepository.save(groupMember);
                     }
 
-                    GroupMember nestedGroup = new GroupMember(group.getDn(), memberDn, GroupMember.TYPE.GROUP);
+                    GroupMember nestedGroup = groupMemberRepository.save(new GroupMember(group.getDn(), memberDn, GroupMember.TYPE.GROUP));
                     groupMemberList.add(nestedGroup);
-                    groupMemberRepository.save(nestedGroup);
+
                     resolveGroupMembers(groupMember); // recursive
                 }
             }

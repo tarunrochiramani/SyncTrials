@@ -14,13 +14,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 import static com.tr.testutils.builders.GroupMemberBuilder.aGroupMember;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = AppConfiguration.class)
@@ -97,6 +97,45 @@ public class GroupMemberRepositoryTest {
         }
 
         assertEquals(page, totalSize/size);
+    }
+
+
+    @Test
+    public void canFindByOwnerDnFilterByType() {
+        int size = 5;
+        repository.deleteAll();
+        addGroupMembersToDB(groupMember.getOwnerDn(), null, GroupMember.TYPE.USER, size);
+        addGroupMembersToDB(null, groupMember.getMemberDn(), GroupMember.TYPE.USER, size);
+
+        List<GroupMember> members = repository.findByOwnerDnFilterByType(groupMember.getOwnerDn(), GroupMember.TYPE.USER);
+
+        assertNotNull(members);
+        assertEquals(size, members.size());
+    }
+
+    @Test
+    public void canFindByOwnerDnFilterByTypeWithPaging() {
+        int size = 10;
+        int pageSize = 5;
+        repository.deleteAll();
+        addGroupMembersToDB(groupMember.getOwnerDn(), null, GroupMember.TYPE.USER, size);
+        addGroupMembersToDB(null, groupMember.getMemberDn(), GroupMember.TYPE.USER, size);
+
+        Pageable pageable = new PageRequest(0, pageSize);
+        List<GroupMember> members = new ArrayList<GroupMember>();
+
+        while (true){
+            Page<GroupMember> memberResults = repository.findByOwnerDnFilterByType(groupMember.getOwnerDn(), GroupMember.TYPE.USER, pageable);
+            pageable = memberResults.nextPageable();
+            members.addAll(memberResults.getContent());
+
+            if (!memberResults.hasNextPage()) {
+                break;
+            }
+        };
+
+        assertNotNull(members);
+        assertEquals(size, members.size());
     }
 
     private void addGroupMembersToDB(String ownerDn, String memberDn, GroupMember.TYPE type, int iterations) {

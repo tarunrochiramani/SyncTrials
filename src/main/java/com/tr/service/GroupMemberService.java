@@ -63,7 +63,7 @@ public class GroupMemberService {
                 List<GroupMemberFlattened> flatMembers = new ArrayList<GroupMemberFlattened>();
                 List<GroupMember> memberList = findGroupMembers(groupDnToSearch, GroupMember.TYPE.USER, entityPaging);
 
-                log.info("+++++++++++++++++++++++++Start Paging while Flattening+++++++++++++++");
+                //log.info("+++++++++++++++++++++++++Start Paging while Flattening+++++++++++++++");
 
                 for (GroupMember member : memberList) {
                     if (groupMemberFlattenedRepository.findByOwnerAndMemberDn(groupDn, member.getMemberDn()) == null) {
@@ -74,7 +74,7 @@ public class GroupMemberService {
                     }
                 }
                 groupMemberFlattenedRepository.save(flatMembers);
-                log.info("+++++++++++++++++++++++++End Paging while Flattening+++++++++++++++");
+                //log.info("+++++++++++++++++++++++++End Paging while Flattening+++++++++++++++");
             } while (entityPaging.hasMore());
 
             // search nested members
